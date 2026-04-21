@@ -95,21 +95,12 @@ function ThreatNetwork() {
   );
 }
 
-const Scene3D = dynamic(() => import("@/components/Scene"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center h-full w-full">
-      <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-    </div>
-  ),
-});
-
 const RULES = [
-  { id: "01", tag: "MANDATORY", text: "Teams must consist of exactly two students." },
-  { id: "02", tag: "REQUIREMENT", text: "Exclusively for students in Classes IX through XII." },
-  { id: "03", tag: "CRITICAL", text: "Zero-tolerance for pre-installed exploits or external toolkits." },
-  { id: "04", tag: "RESTRICTION", text: "All adversarial actions must remain strictly within the sandbox." },
-  { id: "05", tag: "ABSOLUTE", text: "Judicial scoring is absolute and final upon review." },
+  { id: "01", tag: "MANDATORY", text: "Teams must have exactly two participants." },
+  { id: "02", tag: "ELIGIBILITY", text: "Open to students of Classes IX–XII only." },
+  { id: "03", tag: "CRITICAL", text: "No pre-built exploits or external tools allowed." },
+  { id: "04", tag: "RESTRICTION", text: "All actions must stay within the provided environment." },
+  { id: "05", tag: "FINAL", text: "All decisions by organizers are final." },
 ];
 
 const TERMINAL_COMMANDS = [
@@ -148,17 +139,17 @@ function TerminalTypewriter() {
 }
 
 const RED_ATTACKS = [
-  "Advanced SQL Injection",
+  "SQL Injection",
   "Cross-Site Scripting (XSS)",
-  "Zero-Day Simulation",
-  "Infrastructure Exploits",
+  "Authentication Bypass",
+  "System Exploitation",
 ];
 
 const BLUE_DEFENSES = [
-  "Threat Vector Analysis",
-  "Live Vulnerability Patching",
-  "Cryptographic Hardening",
-  "Containment Protocols",
+  "Threat Detection",
+  "Vulnerability Patching",
+  "Access Control",
+  "Incident Response",
 ];
 
 // --- Unified Animation Hook ---
@@ -306,7 +297,7 @@ export default function Page() {
           </a>
           <a href="#teams" className="group flex items-center gap-2 hover:text-white transition-colors">
             <span className="text-[#00ccff] opacity-0 group-hover:opacity-100 transition-opacity">/</span>
-            Divisions
+            Teams
           </a>
           <a href="#rules" className="group flex items-center gap-2 hover:text-white transition-colors">
             <span className="text-[#00ccff] opacity-0 group-hover:opacity-100 transition-opacity">/</span>
@@ -323,7 +314,7 @@ export default function Page() {
           <span className="absolute inset-0 bg-gradient-to-r from-[#00ccff] to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full z-0"></span>
           
           <span className="relative z-10 flex items-center gap-2">
-            Initialize
+            Login
             <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse"></span>
           </span>
         </a>
@@ -384,7 +375,7 @@ export default function Page() {
             <span className="hidden md:block w-12 h-[1px] bg-gradient-to-r from-transparent to-[#00ccff]/50"></span>
             <div className="inline-flex items-center gap-2 px-5 py-1.5 rounded-none border border-[#00ccff]/30 bg-[#00ccff]/5 text-[10px] text-[#00ccff] font-mono uppercase tracking-[0.3em] backdrop-blur-sm shadow-[0_0_20px_rgba(0,204,255,0.15)]">
               <span className="w-1.5 h-1.5 bg-[#00ccff] animate-ping"></span>
-              National Invitational 2026
+              Ordin@trix 26.0
             </div>
             <span className="hidden md:block w-12 h-[1px] bg-gradient-to-l from-transparent to-[#00ccff]/50"></span>
           </div>
@@ -407,9 +398,9 @@ export default function Page() {
             <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-[#00ccff]/50"></div>
             <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-[#00ccff]/50"></div>
             
-            <p className="text-base md:text-xl text-gray-300 font-light tracking-wide leading-relaxed mx-auto">
-              The premier national cyber warfare simulation. Top-tier talent, zero-sum scenarios, and <span className="inline-block mt-2 md:mt-0 font-mono text-[0.85em] text-[#00ccff] bg-[#00ccff]/10 px-3 py-1 rounded border border-[#00ccff]/30 mx-1 shadow-[0_0_10px_rgba(0,204,255,0.2)]">real-time adversarial combat</span>.
-            </p>
+           <p className="text-base md:text-xl text-gray-300 font-light tracking-wide leading-relaxed mx-auto">
+  A cybersecurity showdown for Classes IX–XII, where teams of two battle through live exploits and <span className="inline-block mt-2 md:mt-0 font-mono text-[0.85em] text-[#00ccff] bg-[#00ccff]/10 px-3 py-1 rounded border border-[#00ccff]/30 mx-1 shadow-[0_0_10px_rgba(0,204,255,0.2)]">attack vs defense</span> challenges.
+</p>
           </div>
 
           {/* Automated Scroll Line */}
@@ -433,21 +424,25 @@ export default function Page() {
       <section id="about" className="relative py-32 px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-16">
           {[
-            { num: "01", title: "National Level", desc: "Compete against the most elite high school security talent in the country." },
-            { num: "02", title: "Live Combatives", desc: "Real-time attack and defense simulation inside a bespoke sandboxed network." },
-            { num: "50K", title: "Prize Pool", desc: "Significant rewards, certifications, and direct industry recognition." }
-          ].map((stat, i) => (
-            <div key={i} className="reveal-stagger opacity-0 translate-y-12 transition-all duration-1000 ease-out relative flex flex-col items-center text-center">
-              <span className="text-[12rem] md:text-[14rem] leading-none font-extrabold text-transparent absolute -top-16 md:-top-20 z-0 select-none opacity-10" 
-                    style={{ WebkitTextStroke: '2px #ffffff' }}>
-                {stat.num}
-              </span>
-              <div className="relative z-10 mt-16">
-                <h3 className="text-2xl font-semibold mb-3 tracking-wide">{stat.title}</h3>
-                <p className="text-gray-400 leading-relaxed text-sm md:text-base font-light">{stat.desc}</p>
-              </div>
-            </div>
-          ))}
+  { num: "01", title: "National Level", desc: "Face top high school cybersecurity talent nationwide." },
+  { num: "02", title: "Live Combat", desc: "Real-time attack vs defense in a controlled environment." },
+  { num: "50K", title: "Prize Pool", desc: "Rewards, certifications, and industry exposure." }
+].map((stat, i) => (
+  <div key={i} className="reveal-stagger opacity-0 translate-y-12 transition-all duration-1000 ease-out relative flex flex-col items-center text-center">
+    <span
+      className="text-[12rem] md:text-[14rem] leading-none font-extrabold text-transparent absolute -top-16 md:-top-20 z-0 select-none opacity-10"
+      style={{ WebkitTextStroke: '2px #ffffff' }}
+    >
+      {stat.num}
+    </span>
+    <div className="relative z-10 mt-16">
+      <h3 className="text-2xl font-semibold mb-3 tracking-wide">{stat.title}</h3>
+      <p className="text-gray-400 leading-relaxed text-sm md:text-base font-light">
+        {stat.desc}
+      </p>
+    </div>
+  </div>
+))}
         </div>
       </section>
 
@@ -633,7 +628,7 @@ export default function Page() {
           </p>
           
           {/* High-Tech Button */}
-          <a href="/login" className="relative inline-flex items-center justify-center overflow-hidden border border-white/20 bg-[#050505] px-10 py-5 text-sm md:text-base font-mono uppercase tracking-[0.2em] text-white transition-all duration-500 hover:border-[#00ccff] hover:shadow-[0_0_40px_rgba(0,204,255,0.3)] group/btn">
+          <a href="https://docs.google.com/forms/d/e/1FAIpQLSeEX8W68tbjlwDC-JaL4CULsdJVzkRGnNUejIlj53DnC4l71Q/viewform" className="relative inline-flex items-center justify-center overflow-hidden border border-white/20 bg-[#050505] px-10 py-5 text-sm md:text-base font-mono uppercase tracking-[0.2em] text-white transition-all duration-500 hover:border-[#00ccff] hover:shadow-[0_0_40px_rgba(0,204,255,0.3)] group/btn">
             {/* Button background fill effect */}
             <span className="absolute inset-0 bg-[#00ccff]/10 translate-y-[100%] group-hover/btn:translate-y-0 transition-transform duration-300 ease-in-out z-0"></span>
             
