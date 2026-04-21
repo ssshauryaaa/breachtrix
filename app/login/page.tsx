@@ -1,49 +1,131 @@
 "use client";
 
-import dynamic from "next/dynamic";
-
-const Background3D = dynamic(() => import("@/components/Background3D"), {
-  ssr: false,
-});
-
-import { useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import AuthRedirect from "@/components/AuthRedirect";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+
+// --- Reused Threat Network Background ---
+function ThreatNetwork() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let particles: any[] = [];
+    let animationFrameId: number;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      initParticles();
+    };
+
+    const initParticles = () => {
+      particles = [];
+      const numParticles = Math.min(window.innerWidth / 15, 100);
+      for (let i = 0; i < numParticles; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: (Math.random() - 0.5) * 0.5,
+          radius: Math.random() * 2 + 1,
+          color: Math.random() > 0.8 ? "#ff3333" : "#00ccff",
+        });
+      }
+    };
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      particles.forEach((p, index) => {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+
+        for (let j = index + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dx = p.x - p2.x;
+          const dy = p.y - p2.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < 150) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            const opacity = 1 - distance / 150;
+            ctx.strokeStyle = `rgba(0, 204, 255, ${opacity * 0.2})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+      });
+
+      animationFrameId = requestAnimationFrame(draw);
+    };
+
+    window.addEventListener("resize", resize);
+    resize();
+    draw();
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full block pointer-events-none"
+      style={{ opacity: 0.6 }}
+    />
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
+  const [mounted, setMounted] = useState(false);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // --- Tilt Animation Logic ---
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-
   const mouseXSpring = useSpring(x);
   const mouseYSpring = useSpring(y);
-
   const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["10deg", "-10deg"]);
   const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-10deg", "10deg"]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
     e.currentTarget.style.setProperty("--x", `${mouseX}px`);
     e.currentTarget.style.setProperty("--y", `${mouseY}px`);
 
-    const xPct = mouseX / rect.width - 0.5;
-    const yPct = mouseY / rect.height - 0.5;
-
-    x.set(xPct);
-    y.set(yPct);
+    x.set(mouseX / rect.width - 0.5);
+    y.set(mouseY / rect.height - 0.5);
   };
 
   const handleMouseLeave = () => {
@@ -51,190 +133,177 @@ export default function LoginPage() {
     y.set(0);
   };
 
-  const [error, setError] = useState<string | null>(null); // Add this state
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null); // Clear previous errors
+    setError(null);
 
     try {
       await login(username, password);
+      console.log("AFTER LOGIN");
 
-console.log("AFTER LOGIN"); // 👈 add this
-
-
-// force fresh state read AFTER set()
-const user = useAuthStore.getState().user;
-
-if (user) {
-  router.replace("/dashboard");
-}
+      // force fresh state read AFTER set()
+      const user = useAuthStore.getState().user;
+      if (user) {
+        router.replace("/dashboard");
+      }
     } catch (err: any) {
-      // Set the error state instead of alerting
-      setError(
-        err.message || "Invalid username or password. Please try again.",
-      );
+      setError(err.message || "ERR: Auth token rejected. Connection terminated.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    // <AuthRedirect>
-    <>
-      <Background3D />
-      <main className="relative z-10 flex items-center justify-center h-screen overflow-hidden">
+    <div className="bg-[#030303] text-[#f2f2f2] font-sans min-h-screen overflow-hidden selection:bg-[#00ccff] selection:text-black">
+      
+      {/* ── ANIMATED BACKGROUND ── */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.2]" 
+           style={{ backgroundImage: 'linear-gradient(to right, #666 1px, transparent 1px), linear-gradient(to bottom, #666 1px, transparent 1px)', backgroundSize: '4rem 4rem', maskImage: 'radial-gradient(circle at center, black, transparent 90%)' }} />
+      
+      <div className="fixed inset-0 z-0">
+        {mounted && <ThreatNetwork />}
+      </div>
+
+      {/* ── HUD RADAR RINGS ── */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 opacity-40">
+        <div className="relative w-[100vw] h-[100vw] max-w-[800px] max-h-[800px] md:max-w-[1000px] md:max-h-[1000px]">
+          <div className="absolute inset-0 rounded-full border border-[#00ccff]/20 border-dashed animate-[spin_60s_linear_infinite]"></div>
+          <div className="absolute inset-8 md:inset-16 rounded-full border border-white/5 animate-[spin_40s_linear_infinite_reverse] shadow-[inset_0_0_80px_rgba(0,204,255,0.03)]"></div>
+        </div>
+      </div>
+
+      {/* ── TELEMETRY ── */}
+      <div className="absolute left-6 top-6 flex flex-col gap-2 font-mono text-[9px] text-[#00ccff]/70 tracking-widest uppercase pointer-events-none hidden sm:flex z-10">
+        <span>SYS_AUTH: <span className="text-white animate-pulse">STANDBY</span></span>
+        <span>UPLINK: SECURE</span>
+      </div>
+
+      {/* ── LOGIN CONTAINER ── */}
+      <main className="relative z-10 flex items-center justify-center h-screen w-full px-6">
         <motion.div
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          style={{
-            rotateY,
-            rotateX,
-            transformStyle: "preserve-3d",
-          }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full px-6 relative"
+          style={{ rotateY, rotateX, transformStyle: "preserve-3d" }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="max-w-md w-full relative group"
         >
-          {/* Cursor Glow */}
+          {/* Spotlight Glow */}
           <div
-            className="pointer-events-none absolute inset-0 rounded-sm"
-            style={{
-              background:
-                "radial-gradient(circle at var(--x) var(--y), rgba(220,38,38,0.15), transparent 40%)",
-            }}
+            className="pointer-events-none absolute inset-0 rounded-2xl z-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
+            style={{ background: "radial-gradient(circle at var(--x) var(--y), rgba(0, 204, 255, 0.15), transparent 60%)" }}
           />
 
-          {/* Card Glassmorphism Effect - UPDATED TO DARK MODE */}
+          {/* Card Body */}
           <div
-            style={{ transform: "translateZ(50px)" }}
-            className="bg-[#111111]/95 backdrop-blur-xl border border-gray-800/60 p-10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-sm border-t-4 border-red-600"
+            style={{ transform: "translateZ(30px)" }}
+            className="relative bg-black/60 backdrop-blur-xl border border-white/10 p-10 shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
           >
-            <div
-              className="mb-10 select-none"
-              style={{ transform: "translateZ(30px)" }}
-            >
-              <motion.h1
-                initial={{ opacity: 0, y: -12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="text-5xl font-extrabold tracking-tight"
-              >
-                <span className="bg-[linear-gradient(110deg,#dc2626,45%,#ef4444,55%,#dc2626)] bg-[length:200%_100%] bg-clip-text text-transparent animate-[shine_4s_linear_infinite]">
-                  Breach
-                </span>
+            {/* Cyber Targeting Brackets */}
+            <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-white/20 group-hover:border-[#00ccff] transition-colors duration-500"></div>
+            <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-white/20 group-hover:border-[#00ccff] transition-colors duration-500"></div>
+            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-white/20 group-hover:border-[#00ccff] transition-colors duration-500"></div>
+            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-white/20 group-hover:border-[#00ccff] transition-colors duration-500"></div>
 
-                {/* UPDATED TEXT COLOR */}
-                <span className="text-white mx-1">@</span>
-                <span className="text-white font-black">trix</span>
-              </motion.h1>
-
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: 140 }}
-                transition={{ delay: 0.3, duration: 0.7 }}
-                className="h-[2px] bg-red-600 mt-3 rounded-full"
-              />
-
-              <p className="text-xs tracking-[0.35em] text-gray-400 mt-2 uppercase">
-                Ordin@trix 26'
+            {/* Header */}
+            <div className="mb-10 select-none text-center" style={{ transform: "translateZ(20px)" }}>
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#00ccff]/30 bg-[#00ccff]/10 text-[#00ccff] font-mono text-[10px] uppercase tracking-widest mb-6">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00ccff] animate-pulse"></span>
+                Clearance Required
+              </div>
+              
+              <h1 className="text-3xl font-mono tracking-widest uppercase text-white group-hover:text-gray-300 transition-colors">
+                breach<span className="text-[#00ccff]">@</span>trix
+              </h1>
+              <p className="text-[9px] tracking-[0.4em] text-gray-500 mt-2 uppercase font-mono">
+                System Login // v.2026
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Error Output */}
               {error && (
-                <div
-                  // Keep it popping forward slightly
-                  style={{ transform: "translateZ(30px)" }}
-                  // REDUCED PADDING AND MARGINS FOR THE BOX
-                  className="mb-4 px-3 py-2.5 rounded border border-red-900/40 border-l-4 border-l-red-600 bg-red-950/10 shadow-[0_0_15px_rgba(220,38,38,0.1)]"
-                >
-                  {/* Clean text output */}
-                  <p className="text-sm font-mono text-red-400 tracking-tight leading-tight">
-                    {error}
+                <div style={{ transform: "translateZ(10px)" }} className="px-4 py-3 border border-[#ff3333]/30 bg-[#ff3333]/10">
+                  <p className="text-[10px] font-mono text-[#ff3333] uppercase tracking-widest flex items-center gap-2">
+                    <span className="animate-pulse">!</span> {error}
                   </p>
                 </div>
               )}
 
-              <div style={{ transform: "translateZ(20px)" }}>
-                <label className="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">
+              {/* Username Input */}
+              <div style={{ transform: "translateZ(10px)" }} className="relative">
+                <label className="block text-[10px] font-mono uppercase tracking-[0.2em] text-[#00ccff]/70 mb-2">
                   Innovator ID
                 </label>
-
-                {/* UPDATED INPUT STYLES */}
-                <input
-                  className="w-full px-4 py-3 bg-[#0a0a0a] border border-gray-800 rounded-md
-    text-white focus:border-red-500 focus:ring-2 focus:ring-red-500/30
-    outline-none transition-all duration-200
-    placeholder:text-gray-600"
-                  placeholder="Username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                />
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-sm">{">"}</span>
+                  <input
+                    className="w-full bg-[#050505] border border-white/10 px-10 py-3 text-sm font-mono text-white placeholder-gray-700 focus:outline-none focus:border-[#00ccff] focus:shadow-[0_0_15px_rgba(0,204,255,0.2)] transition-all rounded-none"
+                    placeholder="sys.admin"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
 
-              <div style={{ transform: "translateZ(20px)" }}>
-                <label className="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">
+              {/* Password Input */}
+              <div style={{ transform: "translateZ(10px)" }} className="relative">
+                <label className="block text-[10px] font-mono uppercase tracking-[0.2em] text-[#00ccff]/70 mb-2">
                   Auth Key
                 </label>
-
-                {/* UPDATED INPUT STYLES */}
-                <input
-                  type="password"
-                  className="w-full px-4 py-3 bg-[#0a0a0a] border border-gray-800 rounded-md
-    text-white focus:border-red-500 focus:ring-2 focus:ring-red-500/30
-    outline-none transition-all duration-200
-    placeholder:text-gray-600"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-sm">{">"}</span>
+                  <input
+                    type="password"
+                    className="w-full bg-[#050505] border border-white/10 px-10 py-3 text-sm font-mono text-white placeholder-gray-700 focus:outline-none focus:border-[#00ccff] focus:shadow-[0_0_15px_rgba(0,204,255,0.2)] transition-all rounded-none"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
 
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.96 }}
-                disabled={loading}
-                style={{ transform: "translateZ(40px)" }}
-                className="w-full relative overflow-hidden rounded-md
-  bg-gradient-to-r from-slate-900 to-black border border-gray-800/50
-  text-white py-4 font-semibold uppercase tracking-widest
-  shadow-lg hover:shadow-red-500/20
-  transition-all duration-300 disabled:opacity-50"
-              >
-                <span className="relative z-10">
-                  {loading ? "Authenticating..." : "Enter the System"}
-                </span>
-
-                <span
-                  className="absolute inset-0 opacity-0 hover:opacity-100 transition duration-300
-    bg-gradient-to-r from-red-600 to-red-500"
-                />
-              </motion.button>
+              {/* Submit Button */}
+              <div style={{ transform: "translateZ(20px)" }} className="pt-4">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full relative inline-flex items-center justify-center overflow-hidden border border-white/20 bg-[#050505] px-10 py-4 text-xs font-mono uppercase tracking-[0.2em] text-white transition-all duration-500 hover:border-[#00ccff] hover:shadow-[0_0_30px_rgba(0,204,255,0.3)] group/btn disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="absolute inset-0 bg-[#00ccff]/10 translate-y-[100%] group-hover/btn:translate-y-0 transition-transform duration-300 ease-in-out z-0"></span>
+                  <span className="relative z-10 flex items-center gap-3">
+                    {loading ? "Authenticating..." : "Initiate Sequence"}
+                    {!loading && (
+                      <svg className="group-hover/btn:translate-x-1 transition-transform duration-300" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                      </svg>
+                    )}
+                  </span>
+                </button>
+              </div>
             </form>
 
-            <div
-              className="mt-8 pt-6 border-t border-gray-800 text-center space-y-3"
-              style={{ transform: "translateZ(10px)" }}
-            >
-              <p className="text-xs text-gray-500">
-                New?{" "}
+            {/* Footer / Register Link */}
+            <div className="mt-8 pt-6 border-t border-white/10 text-center" style={{ transform: "translateZ(10px)" }}>
+              <p className="text-[10px] font-mono tracking-widest text-gray-500 uppercase">
+                Unregistered Vector?{" "}
                 <button
                   onClick={() => router.push("/register")}
-                  className="font-semibold text-red-600 hover:text-red-500 transition-colors relative group"
+                  className="text-[#00ccff] hover:text-white transition-colors relative group inline-block ml-1"
                 >
-                  Create an account
-                  <span className="absolute left-0 -bottom-[2px] h-[1px] w-0 bg-red-600 transition-all duration-300 group-hover:w-full"></span>
+                  Initialize Here
+                  <span className="absolute left-0 -bottom-1 h-[1px] w-0 bg-[#00ccff] transition-all duration-300 group-hover:w-full"></span>
                 </button>
               </p>
             </div>
           </div>
         </motion.div>
       </main>
-      </>
-    // </AuthRedirect>
+    </div>
   );
 }

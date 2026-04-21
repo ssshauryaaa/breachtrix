@@ -1,646 +1,671 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+
+
+function ThreatNetwork() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let particles: any[] = [];
+    let animationFrameId: number;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      initParticles();
+    };
+
+    const initParticles = () => {
+      particles = [];
+      const numParticles = Math.min(window.innerWidth / 15, 100); // Adjust density based on screen size
+      for (let i = 0; i < numParticles; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: (Math.random() - 0.5) * 0.5,
+          radius: Math.random() * 2 + 1,
+          color: Math.random() > 0.8 ? '#ff3333' : '#00ccff' // 20% red threats, 80% cyan data
+        });
+      }
+    };
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Update & Draw Particles
+      particles.forEach((p, index) => {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Bounce off edges
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+
+        // Draw connections
+        for (let j = index + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dx = p.x - p2.x;
+          const dy = p.y - p2.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+
+          if (distance < 150) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            // Opacity fades as they get further apart
+            const opacity = 1 - (distance / 150);
+            ctx.strokeStyle = `rgba(0, 204, 255, ${opacity * 0.2})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+      });
+
+      animationFrameId = requestAnimationFrame(draw);
+    };
+
+    window.addEventListener('resize', resize);
+    resize();
+    draw();
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
+  return (
+    <canvas 
+      ref={canvasRef} 
+      className="absolute inset-0 w-full h-full block pointer-events-none"
+      style={{ opacity: 0.6 }}
+    />
+  );
+}
 
 const Scene3D = dynamic(() => import("@/components/Scene"), {
   ssr: false,
   loading: () => (
-    <div className="fixed inset-0 bg-[#030305] flex items-center justify-center z-[100]">
-      <span className="text-red-600 font-mono animate-pulse text-sm tracking-widest">
-        INITIALIZING_BREACH_SEQUENCE...
-      </span>
+    <div className="flex items-center justify-center h-full w-full">
+      <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
     </div>
   ),
 });
 
 const RULES = [
-  { id: "01", text: "1 team of 2 students per entry" },
-  { id: "02", text: "Eligibility: Classes IX – XII" },
-  { id: "03", text: "No pre-installed exploits or external toolkits" },
-  { id: "04", text: "All attacks must stay within the sandboxed environment" },
-  { id: "05", text: "Judges' decisions on scoring are final" },
+  { id: "01", tag: "MANDATORY", text: "Teams must consist of exactly two students." },
+  { id: "02", tag: "REQUIREMENT", text: "Exclusively for students in Classes IX through XII." },
+  { id: "03", tag: "CRITICAL", text: "Zero-tolerance for pre-installed exploits or external toolkits." },
+  { id: "04", tag: "RESTRICTION", text: "All adversarial actions must remain strictly within the sandbox." },
+  { id: "05", tag: "ABSOLUTE", text: "Judicial scoring is absolute and final upon review." },
 ];
 
+const TERMINAL_COMMANDS = [
+  "./execute_sandbox.sh --bypass-auth",
+  "nmap -sS -p- 192.168.1.100 -v",
+  "Establishing secure SSH tunnel...",
+  "Decrypting payload [████████░░] 80%",
+  "Access granted. Root privileges escalated.",
+  "tail -f /var/log/syslog | grep 'CRITICAL'",
+];
+
+function TerminalTypewriter() {
+  const [text, setText] = useState("");
+  const [cmdIndex, setCmdIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const currentCmd = TERMINAL_COMMANDS[cmdIndex];
+    const typeSpeed = isDeleting ? 20 : Math.random() * 50 + 30; // Randomize typing speed for realism
+    
+    const timer = setTimeout(() => {
+      if (!isDeleting && text === currentCmd) {
+        setTimeout(() => setIsDeleting(true), 2500); // Pause at the end of the command
+      } else if (isDeleting && text === "") {
+        setIsDeleting(false);
+        setCmdIndex((prev) => (prev + 1) % TERMINAL_COMMANDS.length);
+      } else {
+        setText(currentCmd.substring(0, text.length + (isDeleting ? -1 : 1)));
+      }
+    }, typeSpeed);
+
+    return () => clearTimeout(timer);
+  }, [text, isDeleting, cmdIndex]);
+
+  return <span className="text-gray-300 ml-2 font-mono">{text}</span>;
+}
+
 const RED_ATTACKS = [
-  "SQL Injection",
-  "XSS (Cross-Site Scripting)",
-  "Authentication Bypass",
-  "Misconfiguration Exploits",
+  "Advanced SQL Injection",
+  "Cross-Site Scripting (XSS)",
+  "Zero-Day Simulation",
+  "Infrastructure Exploits",
 ];
 
 const BLUE_DEFENSES = [
-  "Real-time Attack Analysis",
-  "Vulnerability Patching",
-  "Secure Code Hardening",
-  "Damage Minimisation",
+  "Threat Vector Analysis",
+  "Live Vulnerability Patching",
+  "Cryptographic Hardening",
+  "Containment Protocols",
 ];
 
-function GlitchText({ text }: { text: string }) {
-  const [glitch, setGlitch] = useState(false);
+// --- Unified Animation Hook ---
+function useAnimations() {
   useEffect(() => {
-    const interval = setInterval(() => {
-      setGlitch(true);
-      setTimeout(() => setGlitch(false), 150);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
-  return (
-    <span className={`relative inline-block ${glitch ? "glitch" : ""}`}>
-      {text}
-      <style>{`
-        .glitch {
-          animation: glitch-clip 0.15s steps(1) forwards;
-        }
-        @keyframes glitch-clip {
-          0%   { clip-path: inset(40% 0 50% 0); transform: translate(-4px, 0); color: #00ffff; }
-          25%  { clip-path: inset(10% 0 80% 0); transform: translate(4px, 0); color: #ff0044; }
-          50%  { clip-path: inset(70% 0 10% 0); transform: translate(-2px, 0); color: #ffff00; }
-          75%  { clip-path: inset(30% 0 60% 0); transform: translate(2px, 0); color: #ff0044; }
-          100% { clip-path: none; transform: none; color: inherit; }
-        }
-      `}</style>
-    </span>
-  );
-}
+    const revealElements = document.querySelectorAll(".reveal-up");
+    const revealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add("opacity-100", "translate-y-0");
+            e.target.classList.remove("opacity-0", "translate-y-8");
+            revealObserver.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+    );
+    revealElements.forEach((el) => revealObserver.observe(el));
 
-function ScanLine() {
-  return (
-    <div
-      className="pointer-events-none fixed inset-0 z-[200]"
-      style={{
-        background:
-          "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)",
-      }}
-    />
-  );
-}
+    const staggerElements = document.querySelectorAll(".reveal-stagger");
+    const staggerObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            const index = Array.from(staggerElements).indexOf(e.target);
+            (e.target as HTMLElement).style.transitionDelay = `${index * 150}ms`;
+            
+            e.target.classList.add("opacity-100", "translate-y-0");
+            e.target.classList.remove("opacity-0", "translate-y-12");
+            staggerObserver.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
+    );
+    staggerElements.forEach((el) => staggerObserver.observe(el));
 
-function TerminalBadge({ label, color }: { label: string; color: string }) {
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-sm font-mono text-xs tracking-widest border"
-      style={{
-        color,
-        borderColor: color,
-        background: `${color}11`,
-        boxShadow: `0 0 10px ${color}33`,
-      }}
-    >
-      <span
-        className="w-1.5 h-1.5 rounded-full animate-pulse"
-        style={{ background: color }}
-      />
-      {label}
-    </span>
-  );
-}
-
-function useScrollReveal() {
-  useEffect(() => {
-    const run = () => {
-      const els = document.querySelectorAll(
-        ".reveal, .reveal-left, .reveal-right",
-      );
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((e) => {
-            if (e.isIntersecting) {
-              e.target.classList.add("revealed");
-              observer.unobserve(e.target);
-            }
-          });
-        },
-        { threshold: 0.1 },
-      );
-      els.forEach((el) => observer.observe(el));
-      return () => observer.disconnect();
+    return () => {
+      revealObserver.disconnect();
+      staggerObserver.disconnect();
     };
-    // small delay so DOM is fully painted
-    const t = setTimeout(run, 100);
-    return () => clearTimeout(t);
   }, []);
+}
+
+// --- NEW: Interactive Tilt & Spotlight Card Component ---
+function InteractiveTiltCard({ children, glowColor, delayClass }: { children: React.ReactNode, glowColor: string, delayClass: string }) {
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [rotate, setRotate] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    setPosition({ x, y });
+    setIsHovered(true);
+
+    // Calculate rotation (-5 to +5 degrees based on cursor position)
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((y - centerY) / centerY) * -5; 
+    const rotateY = ((x - centerX) / centerX) * 5;
+    
+    setRotate({ x: rotateX, y: rotateY });
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setRotate({ x: 0, y: 0 });
+  };
+
+  return (
+    <div className={`reveal-up opacity-0 translate-y-8 transition-all duration-1000 ease-out ${delayClass}`} style={{ perspective: "1000px" }}>
+      <div
+        ref={cardRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        className="group relative h-full w-full bg-[#0a0a0a] border border-white/10 rounded-2xl p-10 overflow-hidden"
+        style={{
+          transform: `rotateX(${rotate.x}deg) rotateY(${rotate.y}deg)`,
+          transition: isHovered ? "none" : "transform 0.5s ease-out",
+          transformStyle: "preserve-3d" // Allows inner elements to pop out in 3D
+        }}
+      >
+        {/* Dynamic Spotlight Gradient that follows the cursor */}
+        <div 
+          className="absolute inset-0 pointer-events-none transition-opacity duration-300"
+          style={{
+            opacity: isHovered ? 1 : 0,
+            background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, ${glowColor}, transparent 40%)`
+          }}
+        />
+        
+        {/* Card Content - Popped out slightly in 3D space for parallax effect */}
+        <div className="relative z-10 transition-transform duration-300 ease-out" style={{ transform: isHovered ? "translateZ(30px)" : "translateZ(0px)" }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function Page() {
   const [mounted, setMounted] = useState(false);
+  const headlineRef = useRef<HTMLHeadingElement>(null);
+
   useEffect(() => {
     setMounted(true);
   }, []);
-  useScrollReveal();
+
+  useAnimations();
 
   return (
-    <>
-      <ScanLine />
+    <div className="bg-[#030303] text-[#f2f2f2] font-sans min-h-screen selection:bg-white selection:text-black overflow-x-hidden">
+      
+      {/* ── ANIMATED GRID BACKGROUND ── */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.2] animate-gridFlicker" 
+           style={{ backgroundImage: 'linear-gradient(to right, #666 1px, transparent 1px), linear-gradient(to bottom, #666 1px, transparent 1px)', backgroundSize: '4rem 4rem', maskImage: 'radial-gradient(circle at center, black, transparent 90%)' }} />
 
-      {/* 3D Background */}
-      <div className="fixed inset-0 z-0">
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse at 50% 38%, #111111 0%, #060606 70%)",
-          }}
-        />
-        {mounted && <Scene3D />}
-      </div>
+      {/* ── REDESIGNED FLOATING NAV (TACTICAL PILL) ── */}
+      <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between px-4 sm:px-6 py-3 bg-[#050505]/80 backdrop-blur-xl border border-white/10 rounded-full w-[95%] max-w-5xl shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
+        
+        {/* Logo */}
+        <a href="/" className="group flex items-center gap-3 select-none">
+          {/* Live Threat Indicator */}
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff3333] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ff3333]"></span>
+          </span>
+          {/* Typographic Logo - No Spaces */}
+          <span className="font-mono text-sm tracking-widest uppercase text-white group-hover:text-gray-300 transition-colors">
+            breach<span className="text-[#00ccff]">@</span>trix
+          </span>
+        </a>
 
-      {/* Content */}
-      <main className="relative z-10 min-h-screen">
-        {/* ── NAV ── */}
-        <nav
-          className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-4"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(6,6,6,0.97) 0%, transparent 100%)",
-            backdropFilter: "blur(6px)",
-          }}
+        {/* Desktop Navigation Links */}
+        <div className="hidden md:flex items-center gap-8 text-[10px] lg:text-xs font-mono tracking-[0.2em] uppercase text-gray-500">
+          <a href="#about" className="group flex items-center gap-2 hover:text-white transition-colors">
+            <span className="text-[#00ccff] opacity-0 group-hover:opacity-100 transition-opacity">/</span>
+            Sys.Intel
+          </a>
+          <a href="#teams" className="group flex items-center gap-2 hover:text-white transition-colors">
+            <span className="text-[#00ccff] opacity-0 group-hover:opacity-100 transition-opacity">/</span>
+            Divisions
+          </a>
+          <a href="#rules" className="group flex items-center gap-2 hover:text-white transition-colors">
+            <span className="text-[#00ccff] opacity-0 group-hover:opacity-100 transition-opacity">/</span>
+            Protocol
+          </a>
+        </div>
+
+        {/* CTA Button */}
+        <a
+          href="/login"
+          className="group relative flex items-center gap-2 bg-white text-black px-6 py-2 rounded-full text-[10px] sm:text-xs font-mono font-bold uppercase tracking-[0.15em] hover:scale-105 transition-all duration-300 shadow-[0_0_15px_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(0,204,255,0.4)]"
         >
-          <div className="orbitron text-sm font-bold tracking-widest text-white flicker">
-            BREACH<span style={{ color: "var(--red)" }}>@</span>TRIX
-          </div>
-          <div className="flex items-center gap-5">
-            <span
-              className="mono text-xs flex items-center gap-2"
-              style={{ color: "var(--dim)" }}
-            >
-              SYS::ONLINE
-              <span
-                className="w-2 h-2 rounded-full animate-pulse"
-                style={{ background: "#00ff88" }}
-              />
-            </span>
-            <a
-              href="/login"
-              className="hex-btn hex-btn-red"
-              style={{ padding: "8px 24px", fontSize: "11px" }}
-            >
-              LOGIN
-            </a>
-          </div>
-        </nav>
+          {/* Hover color shift effect */}
+          <span className="absolute inset-0 bg-gradient-to-r from-[#00ccff] to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full z-0"></span>
+          
+          <span className="relative z-10 flex items-center gap-2">
+            Initialize
+            <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse"></span>
+          </span>
+        </a>
 
-        {/* ── HERO ── */}
-        <section className="relative flex flex-col items-center justify-center min-h-screen px-6 text-center">
-          <div className="max-w-4xl mx-auto">
-            <p
-              className="mono text-xs tracking-[0.5em] mb-6 anim-1 flicker uppercase"
-              style={{
-                color: "#ffffff",
-                textShadow: "0 0 10px rgba(255, 30, 0, 0.8)",
-                opacity: 0.9,
-              }}
-            >
-              Ordin@trix 26'
-            </p>
+        {/* Mobile Menu Toggle (Hamburger) - Only shows on small screens */}
+        <button className="md:hidden text-gray-400 hover:text-white p-2 ml-2">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </nav>
 
-            <h1
-              className="orbitron font-black leading-none mb-4 anim-2"
-              style={{
-                fontSize: "clamp(3rem, 10vw, 8rem)",
-                letterSpacing: "-0.02em",
-              }}
-            >
-              <span style={{ color: "#c8c8c8" }}>BREACH</span>
-              <span style={{ color: "#444" }}>@</span>
-              <span style={{ color: "white" }}>TRIX</span>
+      {/* ── REDESIGNED HERO (THREAT NETWORK & HUD) ── */}
+      <section className="relative flex flex-col items-center justify-center min-h-screen px-6 pt-20 overflow-hidden bg-[#050505]">
+        
+        {/* 1. New Background: Cyber Grid & Active Threat Network */}
+        <div className="absolute inset-0 z-0">
+          {/* Perspective Data Grid */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#00ccff10_1px,transparent_1px),linear-gradient(to_bottom,#00ccff10_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none"></div>
+          
+          {/* Live Node Network */}
+          {mounted && <ThreatNetwork />}
+        </div>
+
+        {/* 2. HUD Radar Rings (Subtle backdrop overlay) */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 opacity-40">
+          <div className="relative w-[100vw] h-[100vw] max-w-[800px] max-h-[800px] md:max-w-[1000px] md:max-h-[1000px]">
+            {/* Outer rotating dashed ring */}
+            <div className="absolute inset-0 rounded-full border border-[#00ccff]/20 border-dashed animate-[spin_60s_linear_infinite]"></div>
+            {/* Inner reverse rotating solid ring */}
+            <div className="absolute inset-8 md:inset-16 rounded-full border border-white/5 animate-[spin_40s_linear_infinite_reverse] shadow-[inset_0_0_80px_rgba(255,51,51,0.03)]"></div>
+          </div>
+        </div>
+
+        {/* 3. HUD Telemetry Elements (Edges of Screen) */}
+        <div className="absolute left-4 md:left-10 top-1/3 flex flex-col gap-2 font-mono text-[9px] text-[#00ccff]/70 tracking-widest uppercase pointer-events-none hidden sm:flex z-10">
+          <span>SYS.OP.VOL: <span className="text-white animate-pulse">NOMINAL</span></span>
+          <span>NET.TRAFFIC: 8.4TB/S</span>
+          <span>LAT: 28.6139° N</span>
+          <span>LON: 77.2090° E</span>
+          {/* Cyan Data Line */}
+          <div className="w-px h-24 bg-gradient-to-b from-[#00ccff]/50 to-transparent mt-4"></div>
+        </div>
+
+        <div className="absolute right-4 md:right-10 bottom-1/3 flex flex-col gap-2 font-mono text-[9px] text-[#ff3333]/70 tracking-widest uppercase text-right items-end pointer-events-none hidden sm:flex z-10">
+          {/* Red Data Line */}
+          <div className="w-px h-24 bg-gradient-to-t from-[#ff3333]/50 to-transparent mb-4"></div>
+          <span>THREAT LEVEL: <span className="text-white animate-pulse">ELEVATED</span></span>
+          <span>DEF_PROTOCOLS: ENGAGED</span>
+          <span>SANDBOX: ISOLATED</span>
+        </div>
+
+        {/* 4. Main Foreground Content */}
+        <div className="relative z-10 w-full max-w-6xl mx-auto flex flex-col items-center text-center mt-10 pointer-events-none">
+          
+          {/* Top Badge */}
+          <div className="reveal-up opacity-0 translate-y-8 transition-all duration-1000 ease-out flex items-center gap-4 mb-8">
+            <span className="hidden md:block w-12 h-[1px] bg-gradient-to-r from-transparent to-[#00ccff]/50"></span>
+            <div className="inline-flex items-center gap-2 px-5 py-1.5 rounded-none border border-[#00ccff]/30 bg-[#00ccff]/5 text-[10px] text-[#00ccff] font-mono uppercase tracking-[0.3em] backdrop-blur-sm shadow-[0_0_20px_rgba(0,204,255,0.15)]">
+              <span className="w-1.5 h-1.5 bg-[#00ccff] animate-ping"></span>
+              National Invitational 2026
+            </div>
+            <span className="hidden md:block w-12 h-[1px] bg-gradient-to-l from-transparent to-[#00ccff]/50"></span>
+          </div>
+
+          {/* Clean, Sharp Title */}
+          <div className="relative mb-12" ref={headlineRef}>
+            <h1 className="relative font-black text-[clamp(3.5rem,10vw,8rem)] leading-[0.9] tracking-tighter text-white uppercase select-none" style={{ textShadow: '0 20px 50px rgba(0,0,0,0.8)' }}>
+              <span className="block text-xl md:text-3xl text-gray-400 tracking-[0.3em] font-light mb-4 animate-pulse">Secure The</span>
+              <span className="relative inline-block text-white">
+                Mainframe<span className="text-[#ff3333]">.</span>
+              </span>
             </h1>
-
-            <div className="flex flex-wrap gap-3 justify-center mb-10 anim-4">
-              <TerminalBadge label="🔴 RED TEAM :: ATTACK" color="#ff2200" />
-              <TerminalBadge label="🔵 BLUE TEAM :: DEFEND" color="#0066ff" />
-              <TerminalBadge label="CLASS IX – XII" color="#888899" />
-              <TerminalBadge label="4 STUDENTS / TEAM" color="#888899" />
-            </div>
-
-            <div className="flex justify-center anim-5">
-              <a href="/login" className="hex-btn hex-btn-red">
-                <span>LOGIN</span>
-                <span style={{ opacity: 0.7 }}>→</span>
-              </a>
-            </div>
           </div>
-
-          {/* scroll hint */}
-          <div
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 mono text-xs anim-6"
-            style={{ color: "var(--dim)" }}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <span style={{ letterSpacing: "0.3em" }}>SCROLL</span>
-              <div
-                className="w-px h-8 animate-bounce"
-                style={{ background: "var(--red)" }}
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* ── ABOUT ── */}
-        <section id="about" className="relative py-32 px-6">
-          <div className="max-w-5xl mx-auto">
-            <div className="divider mb-16" />
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div className="reveal reveal-left">
-                <p
-                  className="mono text-xs tracking-widest mb-3"
-                  style={{ color: "var(--red)" }}
-                >
-                  // MISSION_BRIEF
-                </p>
-                <h2
-                  className="orbitron font-bold mb-6"
-                  style={{
-                    fontSize: "clamp(1.8rem, 4vw, 3rem)",
-                    lineHeight: 1.1,
-                  }}
-                >
-                  High-Intensity
-                  <br />
-                  <span style={{ color: "var(--red)" }}>Cyber Warfare</span>
-                </h2>
-                <p
-                  style={{
-                    color: "var(--dim)",
-                    lineHeight: 1.8,
-                    fontSize: "1.05rem",
-                  }}
-                >
-                  Breach@Trix pits teams against each other over a deliberately
-                  vulnerable application. One side attacks, the other defends —
-                  in real time. Every second counts. Every vulnerability
-                  matters.
-                </p>
-              </div>
-              <div className="card red-card rounded p-6 relative reveal reveal-right">
-                <div
-                  className="corner-tl"
-                  style={{ borderColor: "var(--red)", opacity: 0.5 }}
-                />
-                <div
-                  className="corner-tr"
-                  style={{ borderColor: "var(--red)", opacity: 0.5 }}
-                />
-                <div
-                  className="corner-bl"
-                  style={{ borderColor: "var(--red)", opacity: 0.5 }}
-                />
-                <div
-                  className="corner-br"
-                  style={{ borderColor: "var(--red)", opacity: 0.5 }}
-                />
-                <p
-                  className="mono text-xs mb-4"
-                  style={{ color: "var(--red)" }}
-                >
-                  EVENT_PARAMS.json
-                </p>
-                <pre
-                  className="mono text-xs leading-7"
-                  style={{ color: "#aaa" }}
-                >{`{
-  "format":      "Red vs Blue",
-  "team_size":   4,
-  "eligibility": "Class IX – XII",
-  "mode":        "Live Adversarial",
-  "target":      "Vulnerable App/Website",
-  "scoring":     "Real-time"
-}`}</pre>
-              </div>
-            </div>
-            <div className="divider mt-16" />
-          </div>
-        </section>
-
-        {/* ── TEAMS ── */}
-        <section id="teams" className="relative py-24 px-6">
-          <div className="max-w-5xl mx-auto">
-            <p
-              className="mono text-xs tracking-widest text-center mb-4 reveal"
-              style={{ color: "var(--dim)" }}
-            >
-              // TEAM_ROLES
+          
+          {/* Subtitle in Targeting Brackets */}
+          <div className="relative p-8 md:p-12 w-full max-w-4xl mx-auto reveal-up opacity-0 translate-y-8 transition-all duration-1000 ease-out delay-[1.5s] backdrop-blur-md bg-black/40 border border-white/5 pointer-events-auto">
+            {/* Corner Brackets */}
+            <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-[#00ccff]/50"></div>
+            <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-[#00ccff]/50"></div>
+            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-[#00ccff]/50"></div>
+            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-[#00ccff]/50"></div>
+            
+            <p className="text-base md:text-xl text-gray-300 font-light tracking-wide leading-relaxed mx-auto">
+              The premier national cyber warfare simulation. Top-tier talent, zero-sum scenarios, and <span className="inline-block mt-2 md:mt-0 font-mono text-[0.85em] text-[#00ccff] bg-[#00ccff]/10 px-3 py-1 rounded border border-[#00ccff]/30 mx-1 shadow-[0_0_10px_rgba(0,204,255,0.2)]">real-time adversarial combat</span>.
             </p>
-            <h2
-              className="orbitron font-bold text-center mb-16 reveal reveal-delay-1"
-              style={{ fontSize: "clamp(1.5rem, 3vw, 2.5rem)" }}
-            >
-              Choose Your Side
-            </h2>
+          </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Red Team */}
-              <div className="card red-card rounded-sm p-8 relative reveal reveal-left reveal-delay-2">
-                <div
-                  className="corner-tl"
-                  style={{ borderColor: "var(--red)" }}
-                />
-                <div
-                  className="corner-br"
-                  style={{ borderColor: "var(--red)" }}
-                />
-                <div className="flex items-center gap-3 mb-6">
-                  <span style={{ fontSize: "2rem" }}>🔴</span>
-                  <div>
-                    <div
-                      className="orbitron font-bold text-xl red-glow"
-                      style={{ color: "var(--red)" }}
-                    >
-                      RED TEAM
-                    </div>
-                    <div
-                      className="mono text-xs"
-                      style={{ color: "var(--dim)" }}
-                    >
-                      ATTACK & EXPLOIT
-                    </div>
-                  </div>
-                </div>
-                <p
-                  className="mb-6 text-sm"
-                  style={{ color: "var(--dim)", lineHeight: 1.7 }}
-                >
-                  Hunt for vulnerabilities, launch ethical attacks, and score
-                  points based on successful exploits — speed and creativity
-                  rewarded.
-                </p>
-                <div className="flex flex-col gap-2">
-                  {RED_ATTACKS.map((a) => (
-                    <div key={a} className="tag-item tag-red">
-                      <span style={{ color: "var(--red)" }}>▸</span>
-                      {a}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Blue Team */}
-              <div className="card blue-card rounded-sm p-8 relative reveal reveal-right reveal-delay-2">
-                <div
-                  className="corner-tl"
-                  style={{ borderColor: "var(--blue)" }}
-                />
-                <div
-                  className="corner-br"
-                  style={{ borderColor: "var(--blue)" }}
-                />
-                <div className="flex items-center gap-3 mb-6">
-                  <span style={{ fontSize: "2rem" }}>🔵</span>
-                  <div>
-                    <div
-                      className="orbitron font-bold text-xl blue-glow"
-                      style={{ color: "var(--blue)" }}
-                    >
-                      BLUE TEAM
-                    </div>
-                    <div
-                      className="mono text-xs"
-                      style={{ color: "var(--dim)" }}
-                    >
-                      DEFEND & SECURE
-                    </div>
-                  </div>
-                </div>
-                <p
-                  className="mb-6 text-sm"
-                  style={{ color: "var(--dim)", lineHeight: 1.7 }}
-                >
-                  Monitor attacks in real time, patch vulnerabilities, and
-                  harden the system — response time and stability are your
-                  score.
-                </p>
-                <div className="flex flex-col gap-2">
-                  {BLUE_DEFENSES.map((d) => (
-                    <div key={d} className="tag-item tag-blue">
-                      <span style={{ color: "var(--blue)" }}>▸</span>
-                      {d}
-                    </div>
-                  ))}
-                </div>
+          {/* Automated Scroll Line */}
+          <a href="#about" className="reveal-up opacity-0 translate-y-8 transition-all duration-1000 ease-out delay-[2s] group flex flex-col items-center gap-4 mt-16 cursor-pointer pointer-events-auto">
+            <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500 group-hover:text-[#00ccff] transition-colors">Commence Briefing</span>
+            <div className="w-px h-16 bg-white/10 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-transparent via-[#00ccff] to-transparent animate-[scan_2s_ease-in-out_infinite]">
+                 <style>{`
+                  @keyframes scan {
+                    0% { transform: translateY(-100%); }
+                    100% { transform: translateY(200%); }
+                  }
+                `}</style>
               </div>
             </div>
-          </div>
-        </section>
+          </a>
+        </div>
+      </section>
 
-        {/* ── SCORING ── */}
-        <section className="relative py-24 px-6">
-          <div className="max-w-5xl mx-auto">
-            <div className="divider divider-blue mb-16" />
-            <p
-              className="mono text-xs tracking-widest text-center mb-4 reveal"
-              style={{ color: "var(--blue)" }}
-            >
-              // SCORING_MATRIX
-            </p>
-            <h2
-              className="orbitron font-bold text-center mb-16 reveal reveal-delay-1"
-              style={{ fontSize: "clamp(1.5rem, 3vw, 2.5rem)" }}
-            >
-              How Points Are Earned
-            </h2>
-
-            <div className="grid md:grid-cols-3 gap-6">
-              {[
-                {
-                  icon: "⚡",
-                  title: "Red Team",
-                  color: "var(--red)",
-                  points: [
-                    "Successful exploits",
-                    "Severity of vulnerabilities",
-                    "Speed of breach",
-                  ],
-                },
-                {
-                  icon: "🛡",
-                  title: "Blue Team",
-                  color: "var(--blue)",
-                  points: [
-                    "Patch effectiveness",
-                    "Response time",
-                    "System stability maintained",
-                  ],
-                },
-                {
-                  icon: "🎯",
-                  title: "Bonus Points",
-                  color: "#ffaa00",
-                  points: [
-                    "Creative techniques",
-                    "Advanced exploits",
-                    "Clean mitigation",
-                  ],
-                },
-              ].map((cat, i) => (
-                <div
-                  key={cat.title}
-                  className={`card rounded p-6 relative text-center reveal reveal-delay-${i + 1}`}
-                  style={{
-                    borderColor: `${cat.color}22`,
-                    boxShadow: `0 0 20px ${cat.color}11`,
-                  }}
-                >
-                  <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>
-                    {cat.icon}
-                  </div>
-                  <div
-                    className="orbitron font-bold mb-4 text-sm"
-                    style={{ color: cat.color }}
-                  >
-                    {cat.title}
-                  </div>
-                  <ul className="flex flex-col gap-2">
-                    {cat.points.map((p) => (
-                      <li
-                        key={p}
-                        className="mono text-xs py-2 px-3 rounded"
-                        style={{
-                          background: `${cat.color}09`,
-                          color: "#aaa",
-                          borderLeft: `2px solid ${cat.color}44`,
-                        }}
-                      >
-                        {p}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+      {/* ── STATS ── */}
+      <section id="about" className="relative py-32 px-6 border-t border-white/5">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-16">
+          {[
+            { num: "01", title: "National Level", desc: "Compete against the most elite high school security talent in the country." },
+            { num: "02", title: "Live Combatives", desc: "Real-time attack and defense simulation inside a bespoke sandboxed network." },
+            { num: "50K", title: "Prize Pool", desc: "Significant rewards, certifications, and direct industry recognition." }
+          ].map((stat, i) => (
+            <div key={i} className="reveal-stagger opacity-0 translate-y-12 transition-all duration-1000 ease-out relative flex flex-col items-center text-center">
+              <span className="text-[12rem] md:text-[14rem] leading-none font-extrabold text-transparent absolute -top-16 md:-top-20 z-0 select-none opacity-10" 
+                    style={{ WebkitTextStroke: '2px #ffffff' }}>
+                {stat.num}
+              </span>
+              <div className="relative z-10 mt-16">
+                <h3 className="text-2xl font-semibold mb-3 tracking-wide">{stat.title}</h3>
+                <p className="text-gray-400 leading-relaxed text-sm md:text-base font-light">{stat.desc}</p>
+              </div>
             </div>
-            <div className="divider divider-blue mt-16" />
-          </div>
-        </section>
+          ))}
+        </div>
+      </section>
 
-        {/* ── RULES ── */}
-        <section className="relative py-24 px-6">
-          <div className="max-w-3xl mx-auto">
-            <p
-              className="mono text-xs tracking-widest text-center mb-4 reveal"
-              style={{ color: "var(--dim)" }}
-            >
-              // RULES
-            </p>
-            <h2
-              className="orbitron font-bold text-center mb-12 reveal reveal-delay-1"
-              style={{ fontSize: "clamp(1.5rem, 3vw, 2.5rem)" }}
-            >
-              Rules of Engagement
-            </h2>
-            <div className="card rounded p-8 relative reveal reveal-delay-2">
-              <div
-                className="corner-tl"
-                style={{ borderColor: "var(--red)", opacity: 0.4 }}
-              />
-              <div
-                className="corner-tr"
-                style={{ borderColor: "var(--red)", opacity: 0.4 }}
-              />
-              <div
-                className="corner-bl"
-                style={{ borderColor: "var(--blue)", opacity: 0.4 }}
-              />
-              <div
-                className="corner-br"
-                style={{ borderColor: "var(--blue)", opacity: 0.4 }}
-              />
-              {RULES.map((rule) => (
-                <div key={rule.id} className="rule-item">
-                  <span
-                    className="mono text-xs flex-shrink-0 pt-0.5"
-                    style={{ color: "var(--red)", minWidth: "28px" }}
-                  >
-                    {rule.id}
-                  </span>
-                  <span style={{ color: "#ccc", lineHeight: 1.6 }}>
-                    {rule.text}
-                  </span>
-                </div>
-              ))}
-            </div>
+      {/* ── DIVISIONS (NOW WITH INTERACTIVE HOVER) ── */}
+      <section id="teams" className="relative py-32 px-6">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0a0a] to-transparent z-0"></div>
+        <div className="relative z-10 max-w-6xl mx-auto">
+          <div className="text-center mb-24 reveal-up opacity-0 translate-y-8 transition-all duration-1000 ease-out">
+            <h2 className="text-[clamp(2.5rem,5vw,4rem)] font-light tracking-tight mb-4">Choose Your Vector</h2>
+            <p className="text-gray-400 text-lg">Two disciplines. One objective. Specify your approach.</p>
           </div>
-        </section>
 
-        {/* ── CTA ── */}
-        <section className="relative py-32 px-6 text-center">
-          <div
-            className="divider mb-24"
-            style={{
-              background:
-                "linear-gradient(90deg, transparent, #ff3333, transparent)",
-            }}
-          />
-          <div className="max-w-3xl mx-auto">
-            <div className="flex items-center justify-center gap-4 mb-8 reveal">
-              <div className="h-px w-12 bg-red-500/20" />
-              <p
-                className="mono text-xs tracking-widest m-0"
-                style={{ color: "#ff3333" }}
-              >
-                // INITIATE_BREACH
+          <div className="grid md:grid-cols-2 gap-10">
+            
+            {/* INTERACTIVE RED TEAM CARD */}
+            <InteractiveTiltCard glowColor="rgba(255, 51, 51, 0.15)" delayClass="delay-100">
+              <div className="w-12 h-12 bg-[#ff3333]/10 border border-[#ff3333]/30 text-[#ff3333] rounded-lg flex items-center justify-center text-xl mb-8 transition-transform group-hover:scale-110">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+              </div>
+              <h3 className="text-3xl font-semibold mb-2 tracking-wide">Offensive Security</h3>
+              <p className="text-[#ff3333] text-xs font-bold font-mono tracking-[0.2em] uppercase mb-6 group-hover:animate-pulse">Red Team Division</p>
+              <p className="text-gray-400 leading-relaxed mb-12 text-sm md:text-base font-light">
+                Infiltrate the architecture. Identify critical vulnerabilities, bypass authentication protocols, and extract data before the opposition can respond.
               </p>
-              <div className="h-px w-12 bg-red-500/20" />
+              <ul className="space-y-4">
+                {RED_ATTACKS.map((a) => (
+                  <li key={a} className="flex items-center gap-4 text-sm font-medium text-gray-300">
+                    <span className="w-1 h-1 rounded-full bg-[#ff3333] group-hover:animate-pulse"></span>
+                    {a}
+                  </li>
+                ))}
+              </ul>
+            </InteractiveTiltCard>
+
+            {/* INTERACTIVE BLUE TEAM CARD */}
+            <InteractiveTiltCard glowColor="rgba(0, 204, 255, 0.15)" delayClass="delay-200">
+              <div className="w-12 h-12 bg-[#00ccff]/10 border border-[#00ccff]/30 text-[#00ccff] rounded-lg flex items-center justify-center text-xl mb-8 transition-transform group-hover:scale-110">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              </div>
+              <h3 className="text-3xl font-semibold mb-2 tracking-wide">Defensive Architecture</h3>
+              <p className="text-[#00ccff] text-xs font-bold font-mono tracking-[0.2em] uppercase mb-6 group-hover:animate-pulse">Blue Team Division</p>
+              <p className="text-gray-400 leading-relaxed mb-12 text-sm md:text-base font-light">
+                Fortify the network. Monitor live traffic anomalies, deploy rapid security patches, and maintain system integrity under heavy adversarial fire.
+              </p>
+              <ul className="space-y-4">
+                {BLUE_DEFENSES.map((d) => (
+                  <li key={d} className="flex items-center gap-4 text-sm font-medium text-gray-300">
+                    <span className="w-1 h-1 rounded-full bg-[#00ccff] group-hover:animate-pulse"></span>
+                    {d}
+                  </li>
+                ))}
+              </ul>
+            </InteractiveTiltCard>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ── REDESIGNED PROTOCOL (TERMINAL UI) ── */}
+      <section id="rules" className="relative py-32 px-6">
+        <div className="max-w-5xl mx-auto reveal-up opacity-0 translate-y-8 transition-all duration-1000 ease-out">
+
+          <div className="mb-12 text-center md:text-left flex flex-col md:flex-row justify-between items-end">
+            <div>
+              <p className="text-[#00ccff] text-xs font-bold font-mono tracking-[0.2em] uppercase mb-4 animate-pulse">System Parameters</p>
+              <h2 className="text-[clamp(2.5rem,4vw,3.5rem)] font-light tracking-tight">Engagement <span className="font-medium">Protocol</span></h2>
             </div>
-
-            <h2
-              className="orbitron font-black mb-14 reveal reveal-delay-1 uppercase"
-              style={{ fontSize: "clamp(2.5rem, 8vw, 6rem)", lineHeight: 1 }}
-            >
-              <span style={{ color: "#e8e8e8" }}>Establish</span>
-              <br />
-              <span
-                className="relative inline-block"
-                style={{
-                  color: "#ff3333",
-                  textShadow: "0 0 30px rgba(255, 51, 51, 0.6)",
-                }}
-              >
-                Connection.
+            <div className="hidden md:flex items-center gap-3 text-gray-500 font-mono text-xs border border-white/10 px-5 py-2.5 rounded-full bg-white/[0.02]">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00ffcc] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00ffcc]"></span>
               </span>
-            </h2>
-
-            <div className="reveal reveal-delay-2 flex justify-center">
-              <a href="/login" className="cyber-btn-red group">
-                <span style={{ color: "#ff3333", opacity: 0.7 }}>[</span>
-                <span className="text-white group-hover:text-red-100 transition-colors duration-300">
-                  AUTHENTICATE
-                </span>
-                <span style={{ color: "#ff3333", opacity: 0.7 }}>]</span>
-
-                {/* Decorative corner borders */}
-                <span className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-red-600/50 group-hover:border-red-500 transition-colors"></span>
-                <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-red-600/50 group-hover:border-red-500 transition-colors"></span>
-              </a>
-            </div>
-
-            <div
-              className="mt-12 mono text-xs reveal reveal-delay-3"
-              style={{ color: "var(--dim)" }}
-            >
-              <span className="flicker">
-                &gt; Overriding local security...{" "}
-                <span className="animate-pulse" style={{ color: "#ff3333" }}>
-                  _
-                </span>
-              </span>
+              SYSTEM LIVE // v.2026.01
             </div>
           </div>
-        </section>
 
-        {/* ── FOOTER ── */}
-        <footer
-          className="relative py-8 px-8 flex items-center justify-between"
-          style={{ borderTop: "1px solid var(--border)" }}
-        >
-          <span
-            className="orbitron text-xs font-bold"
-            style={{ color: "var(--dim)" }}
-          >
-            BREACH<span style={{ color: "var(--red)" }}>@</span>TRIX
-          </span>
-          <span className="mono text-xs" style={{ color: "var(--dim)" }}>
-            // HACK_ETHICALLY :: DEFEND_FIERCELY
-          </span>
-        </footer>
-      </main>
-    </>
+          {/* Terminal/Console Window */}
+          <div className="bg-[#050505] border border-white/10 rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
+            
+            {/* Terminal Header with macOS Buttons */}
+            <div className="bg-[#111111] border-b border-white/5 px-4 py-3 flex items-center justify-between">
+              <div className="flex gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#FF5F56] border border-[#E0443E] shadow-inner"></div>
+                <div className="w-3 h-3 rounded-full bg-[#FFBD2E] border border-[#DEA123] shadow-inner"></div>
+                <div className="w-3 h-3 rounded-full bg-[#27C93F] border border-[#1AAB29] shadow-inner"></div>
+              </div>
+              <p className="text-gray-500 font-mono text-[10px] tracking-wider md:mr-8">root@breachtrix:~/protocol</p>
+              <div className="w-12"></div> {/* Spacer to center the title slightly */}
+            </div>
+
+            {/* Terminal Body */}
+            <div className="p-6 md:p-10 bg-[#0a0a0a]">
+              <p className="text-gray-400 font-mono text-sm mb-8 select-none">
+                <span className="text-[#00ccff] font-bold">root@breachtrix</span>:<span className="text-white">~</span>$ cat engagement_rules.sys
+              </p>
+
+              <div className="space-y-3 relative">
+                {RULES.map((rule, i) => (
+                  <div
+                    key={rule.id}
+                    className="group relative flex flex-col md:flex-row md:items-center gap-4 md:gap-6 p-5 rounded-xl border border-transparent hover:border-white/5 transition-all duration-500 ease-out overflow-hidden reveal-stagger opacity-0 translate-y-8"
+                  >
+                    {/* Hover Effect: Cyber Scanline Wash */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#00ccff]/[0.03] via-transparent to-transparent -translate-x-full group-hover:translate-x-0 transition-transform duration-700 ease-out z-0"></div>
+
+                    {/* Hover Effect: Active Left Bar */}
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#00ccff] to-[#ff3333] scale-y-0 group-hover:scale-y-100 transition-transform duration-300 origin-top rounded-l-xl z-10"></div>
+
+                    <div className="relative z-10 flex items-center gap-4 md:w-48 shrink-0 group-hover:translate-x-2 transition-transform duration-300 ease-out">
+                      <span className="text-gray-600 font-mono text-xs">[{rule.id}]</span>
+                      <span className={`text-[10px] font-bold font-mono tracking-[0.15em] uppercase px-2.5 py-1 rounded border ${
+                        rule.tag === 'CRITICAL' ? 'bg-[#ff3333]/10 border-[#ff3333]/30 text-[#ff3333]' : 
+                        rule.tag === 'MANDATORY' ? 'bg-[#00ccff]/10 border-[#00ccff]/30 text-[#00ccff]' : 
+                        'bg-white/5 border-white/10 text-gray-400'
+                      }`}>
+                        {rule.tag}
+                      </span>
+                    </div>
+
+                    <div className="relative z-10 flex-1 group-hover:translate-x-2 transition-transform duration-300 delay-75 ease-out">
+                      <span className="text-gray-400 font-mono tracking-wide text-sm leading-relaxed group-hover:text-[#f2f2f2] transition-colors">{rule.text}</span>
+                      {/* Hover Effect: Blinking Terminal Cursor */}
+                      <span className="inline-block w-2 h-3.5 bg-[#00ccff] ml-2 opacity-0 group-hover:opacity-100 animate-pulse align-middle transition-opacity"></span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Live Animated Commands */}
+              <p className="text-gray-400 font-mono text-sm mt-10 select-none">
+                <span className="text-[#00ccff] font-bold">root@breachtrix</span>:<span className="text-white">~</span>$ 
+                <TerminalTypewriter />
+                <span className="inline-block w-2 h-4 bg-white/70 align-middle animate-pulse ml-1"></span>
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ── REDESIGNED CTA (SECURITY CHECKPOINT) ── */}
+      <section className="relative py-48 px-6 flex justify-center items-center border-t border-white/5 overflow-hidden">
+        
+        {/* Ambient Background Grid & Glow */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.03)_0%,transparent_70%)] pointer-events-none"></div>
+        <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(#111 1px, transparent 1px), linear-gradient(90deg, #111 1px, transparent 1px)', backgroundSize: '30px 30px', opacity: 0.5 }}></div>
+
+        {/* The Main Container - Uses 'group' to trigger nested hover states */}
+        <div className="group relative z-10 max-w-4xl w-full flex flex-col items-center reveal-up opacity-0 translate-y-8 transition-all duration-1000 ease-out p-12 md:p-20">
+          
+          {/* Cyber Targeting Brackets (Corners) */}
+          <div className="absolute top-0 left-0 w-16 h-16 border-t-2 border-l-2 border-white/20 group-hover:border-[#00ccff] group-hover:scale-110 transition-all duration-500 rounded-tl-xl"></div>
+          <div className="absolute top-0 right-0 w-16 h-16 border-t-2 border-r-2 border-white/20 group-hover:border-[#00ccff] group-hover:scale-110 transition-all duration-500 rounded-tr-xl"></div>
+          <div className="absolute bottom-0 left-0 w-16 h-16 border-b-2 border-l-2 border-white/20 group-hover:border-[#00ccff] group-hover:scale-110 transition-all duration-500 rounded-bl-xl"></div>
+          <div className="absolute bottom-0 right-0 w-16 h-16 border-b-2 border-r-2 border-white/20 group-hover:border-[#00ccff] group-hover:scale-110 transition-all duration-500 rounded-br-xl"></div>
+
+          {/* Scanner Laser Line (Activates on Hover) */}
+          <div className="absolute left-0 right-0 h-[1px] bg-[#00ccff] shadow-[0_0_15px_#00ccff] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-50"
+               style={{ top: '50%', animation: 'scan 2s ease-in-out infinite alternate' }}>
+            <style>{`
+              @keyframes scan {
+                0% { transform: translateY(-100px); }
+                100% { transform: translateY(100px); }
+              }
+            `}</style>
+          </div>
+
+          {/* Dynamic Status Indicator */}
+          <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full border border-[#ff3333]/30 bg-[#ff3333]/10 text-[#ff3333] font-mono text-xs uppercase tracking-widest mb-10 transition-all duration-500 group-hover:border-[#00ccff]/50 group-hover:bg-[#00ccff]/10 group-hover:text-[#00ccff] group-hover:shadow-[0_0_20px_rgba(0,204,255,0.2)]">
+            <span className="w-2 h-2 rounded-full bg-[#ff3333] animate-pulse group-hover:bg-[#00ccff]"></span>
+            <span className="group-hover:hidden">Status: Clearance Pending</span>
+            <span className="hidden group-hover:inline animate-glitch">Status: Access Granted</span>
+          </div>
+
+          {/* Headline */}
+          <h2 className="text-[clamp(3rem,6vw,5.5rem)] font-light tracking-tighter mb-4 text-center leading-[1.1]">
+            Awaiting <br className="md:hidden" />
+            <span className="font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-500 group-hover:from-white group-hover:to-[#00ccff] transition-all duration-500">Authorization.</span>
+          </h2>
+
+          <p className="text-gray-500 font-mono text-sm mb-12 tracking-widest uppercase">
+            [ Action Required: Authenticate to proceed ]
+          </p>
+          
+          {/* High-Tech Button */}
+          <a href="/login" className="relative inline-flex items-center justify-center overflow-hidden border border-white/20 bg-[#050505] px-10 py-5 text-sm md:text-base font-mono uppercase tracking-[0.2em] text-white transition-all duration-500 hover:border-[#00ccff] hover:shadow-[0_0_40px_rgba(0,204,255,0.3)] group/btn">
+            {/* Button background fill effect */}
+            <span className="absolute inset-0 bg-[#00ccff]/10 translate-y-[100%] group-hover/btn:translate-y-0 transition-transform duration-300 ease-in-out z-0"></span>
+            
+            <span className="relative z-10 flex items-center gap-4">
+              Initiate Sequence
+              <svg className="group-hover/btn:translate-x-2 transition-transform duration-300" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </span>
+          </a>
+
+          {/* Decorative Hex Data */}
+          <div className="absolute bottom-6 right-6 text-gray-700 font-mono text-[10px] hidden md:block opacity-50 select-none">
+            0x00F8 0x11A2<br/>0xCC41 0x99B0
+          </div>
+          <div className="absolute top-6 left-6 text-gray-700 font-mono text-[10px] hidden md:block opacity-50 select-none">
+            SYS.REQ.AUTH<br/>NET: SECURE
+          </div>
+
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer className="py-8 px-10 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6 bg-[#000]">
+        <div className="text-sm tracking-widest font-bold uppercase text-gray-500">
+          Breach<span className="text-white font-mono animate-pulse">@</span>Trix
+        </div>
+        <div className="text-xs tracking-wider text-gray-700 uppercase font-mono animate-glitch">
+          © 2026 Ordin@trix • End of Transmission
+        </div>
+      </footer>
+    </div>
   );
 }
