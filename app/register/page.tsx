@@ -267,8 +267,8 @@ export default function RegisterPage() {
               <div style={{ transform: "translateZ(20px)" }} className="pt-4">
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-full relative inline-flex items-center justify-center overflow-hidden border border-white/20 bg-[#050505] px-10 py-4 text-xs font-mono uppercase tracking-[0.2em] text-white transition-all duration-500 hover:border-[#00ccff] hover:shadow-[0_0_30px_rgba(0,204,255,0.3)] group/btn disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={true} // <--- Changed this from {loading} to true
+                  className="w-full relative inline-flex items-center justify-center overflow-hidden border border-white/20 bg-[#050505] px-10 py-4 text-xs font-mono uppercase tracking-[0.2em] text-white transition-all duration-500 hover:border-[#00ccff] hover:shadow-[0_0_30px_rgba(0,204,255,0.3)] group/btn disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-white/20 disabled:hover:shadow-none"
                 >
                   <span className="absolute inset-0 bg-[#00ccff]/10 translate-y-[100%] group-hover/btn:translate-y-0 transition-transform duration-300 ease-in-out z-0"></span>
                   <span className="relative z-10 flex items-center gap-3">

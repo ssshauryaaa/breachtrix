@@ -424,9 +424,9 @@ export default function Page() {
       <section id="about" className="relative py-32 px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-16">
           {[
-  { num: "01", title: "National Level", desc: "Face top high school cybersecurity talent nationwide." },
+  { num: "01", title: "Compete", desc: "Face against other schools in a competitive cybersecurity arena." },
   { num: "02", title: "Live Combat", desc: "Real-time attack vs defense in a controlled environment." },
-  { num: "50K", title: "Prize Pool", desc: "Rewards, certifications, and industry exposure." }
+  { num: "50K", title: "Prizes", desc: "Trophies, certifications, and industry exposure." }
 ].map((stat, i) => (
   <div key={i} className="reveal-stagger opacity-0 translate-y-12 transition-all duration-1000 ease-out relative flex flex-col items-center text-center">
     <span
