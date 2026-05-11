@@ -38,7 +38,7 @@ function ThreatNetwork() {
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
+
       // Update & Draw Particles
       particles.forEach((p, index) => {
         p.x += p.vx;
@@ -87,8 +87,8 @@ function ThreatNetwork() {
   }, []);
 
   return (
-    <canvas 
-      ref={canvasRef} 
+    <canvas
+      ref={canvasRef}
       className="absolute inset-0 w-full h-full block pointer-events-none"
       style={{ opacity: 0.6 }}
     />
@@ -120,7 +120,7 @@ function TerminalTypewriter() {
   useEffect(() => {
     const currentCmd = TERMINAL_COMMANDS[cmdIndex];
     const typeSpeed = isDeleting ? 20 : Math.random() * 50 + 30; // Randomize typing speed for realism
-    
+
     const timer = setTimeout(() => {
       if (!isDeleting && text === currentCmd) {
         setTimeout(() => setIsDeleting(true), 2500); // Pause at the end of the command
@@ -177,7 +177,7 @@ function useAnimations() {
           if (e.isIntersecting) {
             const index = Array.from(staggerElements).indexOf(e.target);
             (e.target as HTMLElement).style.transitionDelay = `${index * 150}ms`;
-            
+
             e.target.classList.add("opacity-100", "translate-y-0");
             e.target.classList.remove("opacity-0", "translate-y-12");
             staggerObserver.unobserve(e.target);
@@ -207,16 +207,16 @@ function InteractiveTiltCard({ children, glowColor, delayClass }: { children: Re
     const rect = cardRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
+
     setPosition({ x, y });
     setIsHovered(true);
 
     // Calculate rotation (-5 to +5 degrees based on cursor position)
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
-    const rotateX = ((y - centerY) / centerY) * -5; 
+    const rotateX = ((y - centerY) / centerY) * -5;
     const rotateY = ((x - centerX) / centerX) * 5;
-    
+
     setRotate({ x: rotateX, y: rotateY });
   };
 
@@ -239,14 +239,14 @@ function InteractiveTiltCard({ children, glowColor, delayClass }: { children: Re
         }}
       >
         {/* Dynamic Spotlight Gradient that follows the cursor */}
-        <div 
+        <div
           className="absolute inset-0 pointer-events-none transition-opacity duration-300"
           style={{
             opacity: isHovered ? 1 : 0,
             background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, ${glowColor}, transparent 40%)`
           }}
         />
-        
+
         {/* Card Content - Popped out slightly in 3D space for parallax effect */}
         <div className="relative z-10 transition-transform duration-300 ease-out" style={{ transform: isHovered ? "translateZ(30px)" : "translateZ(0px)" }}>
           {children}
@@ -268,14 +268,14 @@ export default function Page() {
 
   return (
     <div className="bg-[#030303] text-[#f2f2f2] font-sans min-h-screen selection:bg-white selection:text-black overflow-x-hidden">
-      
+
       {/* ── ANIMATED GRID BACKGROUND ── */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.2] animate-gridFlicker" 
-           style={{ backgroundImage: 'linear-gradient(to right, #666 1px, transparent 1px), linear-gradient(to bottom, #666 1px, transparent 1px)', backgroundSize: '4rem 4rem', maskImage: 'radial-gradient(circle at center, black, transparent 90%)' }} />
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.2] animate-gridFlicker"
+        style={{ backgroundImage: 'linear-gradient(to right, #666 1px, transparent 1px), linear-gradient(to bottom, #666 1px, transparent 1px)', backgroundSize: '4rem 4rem', maskImage: 'radial-gradient(circle at center, black, transparent 90%)' }} />
 
       {/* ── REDESIGNED FLOATING NAV (TACTICAL PILL) ── */}
       <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between px-4 sm:px-6 py-3 bg-[#050505]/80 backdrop-blur-xl border border-white/10 rounded-full w-[95%] max-w-5xl shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
-        
+
         {/* Logo */}
         <a href="/" className="group flex items-center gap-3 select-none">
           {/* Live Threat Indicator */}
@@ -307,14 +307,14 @@ export default function Page() {
 
         {/* CTA Button */}
         <a
-          href="/login"
+          href="/brackets"
           className="group relative flex items-center gap-2 bg-white text-black px-6 py-2 rounded-full text-[10px] sm:text-xs font-mono font-bold uppercase tracking-[0.15em] hover:scale-105 transition-all duration-300 shadow-[0_0_15px_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(0,204,255,0.4)]"
         >
           {/* Hover color shift effect */}
           <span className="absolute inset-0 bg-gradient-to-r from-[#00ccff] to-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full z-0"></span>
-          
+
           <span className="relative z-10 flex items-center gap-2">
-            Login
+            Brackets
             <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse"></span>
           </span>
         </a>
@@ -329,12 +329,12 @@ export default function Page() {
 
       {/* ── REDESIGNED HERO (THREAT NETWORK & HUD) ── */}
       <section className="relative flex flex-col items-center justify-center min-h-screen px-6 pt-20 overflow-hidden bg-[#050505]">
-        
+
         {/* 1. New Background: Cyber Grid & Active Threat Network */}
         <div className="absolute inset-0 z-0">
           {/* Perspective Data Grid */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#00ccff10_1px,transparent_1px),linear-gradient(to_bottom,#00ccff10_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none"></div>
-          
+
           {/* Live Node Network */}
           {mounted && <ThreatNetwork />}
         </div>
@@ -369,7 +369,7 @@ export default function Page() {
 
         {/* 4. Main Foreground Content */}
         <div className="relative z-10 w-full max-w-6xl mx-auto flex flex-col items-center text-center mt-10 pointer-events-none">
-          
+
           {/* Top Badge */}
           <div className="reveal-up opacity-0 translate-y-8 transition-all duration-1000 ease-out flex items-center gap-4 mb-8">
             <span className="hidden md:block w-12 h-[1px] bg-gradient-to-r from-transparent to-[#00ccff]/50"></span>
@@ -389,7 +389,7 @@ export default function Page() {
               </span>
             </h1>
           </div>
-          
+
           {/* Subtitle in Targeting Brackets */}
           <div className="relative p-8 md:p-12 w-full max-w-4xl mx-auto reveal-up opacity-0 translate-y-8 transition-all duration-1000 ease-out delay-[1.5s] backdrop-blur-md bg-black/40 border border-white/5 pointer-events-auto">
             {/* Corner Brackets */}
@@ -397,10 +397,10 @@ export default function Page() {
             <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-[#00ccff]/50"></div>
             <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-[#00ccff]/50"></div>
             <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-[#00ccff]/50"></div>
-            
-           <p className="text-base md:text-xl text-gray-300 font-light tracking-wide leading-relaxed mx-auto">
-  A cybersecurity showdown for Classes IX–XII, where teams of two battle through live exploits and <span className="inline-block mt-2 md:mt-0 font-mono text-[0.85em] text-[#00ccff] bg-[#00ccff]/10 px-3 py-1 rounded border border-[#00ccff]/30 mx-1 shadow-[0_0_10px_rgba(0,204,255,0.2)]">attack vs defense</span> challenges.
-</p>
+
+            <p className="text-base md:text-xl text-gray-300 font-light tracking-wide leading-relaxed mx-auto">
+              A cybersecurity showdown for Classes IX–XII, where teams of two battle through live exploits and <span className="inline-block mt-2 md:mt-0 font-mono text-[0.85em] text-[#00ccff] bg-[#00ccff]/10 px-3 py-1 rounded border border-[#00ccff]/30 mx-1 shadow-[0_0_10px_rgba(0,204,255,0.2)]">attack vs defense</span> challenges.
+            </p>
           </div>
 
           {/* Automated Scroll Line */}
@@ -408,7 +408,7 @@ export default function Page() {
             <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-gray-500 group-hover:text-[#00ccff] transition-colors">Commence Briefing</span>
             <div className="w-px h-16 bg-white/10 relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-transparent via-[#00ccff] to-transparent animate-[scan_2s_ease-in-out_infinite]">
-                 <style>{`
+                <style>{`
                   @keyframes scan {
                     0% { transform: translateY(-100%); }
                     100% { transform: translateY(200%); }
@@ -424,25 +424,25 @@ export default function Page() {
       <section id="about" className="relative py-32 px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-16">
           {[
-  { num: "01", title: "Compete", desc: "Face against other schools in a competitive cybersecurity arena." },
-  { num: "02", title: "Live Combat", desc: "Real-time attack vs defense in a controlled environment." },
-  { num: "50K", title: "Prizes", desc: "Trophies, certifications, and industry exposure." }
-].map((stat, i) => (
-  <div key={i} className="reveal-stagger opacity-0 translate-y-12 transition-all duration-1000 ease-out relative flex flex-col items-center text-center">
-    <span
-      className="text-[12rem] md:text-[14rem] leading-none font-extrabold text-transparent absolute -top-16 md:-top-20 z-0 select-none opacity-10"
-      style={{ WebkitTextStroke: '2px #ffffff' }}
-    >
-      {stat.num}
-    </span>
-    <div className="relative z-10 mt-16">
-      <h3 className="text-2xl font-semibold mb-3 tracking-wide">{stat.title}</h3>
-      <p className="text-gray-400 leading-relaxed text-sm md:text-base font-light">
-        {stat.desc}
-      </p>
-    </div>
-  </div>
-))}
+            { num: "01", title: "Compete", desc: "Face against other schools in a competitive cybersecurity arena." },
+            { num: "02", title: "Live Combat", desc: "Real-time attack vs defense in a controlled environment." },
+            { num: "50K", title: "Prizes", desc: "Trophies, certifications, and industry exposure." }
+          ].map((stat, i) => (
+            <div key={i} className="reveal-stagger opacity-0 translate-y-12 transition-all duration-1000 ease-out relative flex flex-col items-center text-center">
+              <span
+                className="text-[12rem] md:text-[14rem] leading-none font-extrabold text-transparent absolute -top-16 md:-top-20 z-0 select-none opacity-10"
+                style={{ WebkitTextStroke: '2px #ffffff' }}
+              >
+                {stat.num}
+              </span>
+              <div className="relative z-10 mt-16">
+                <h3 className="text-2xl font-semibold mb-3 tracking-wide">{stat.title}</h3>
+                <p className="text-gray-400 leading-relaxed text-sm md:text-base font-light">
+                  {stat.desc}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -456,7 +456,7 @@ export default function Page() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-10">
-            
+
             {/* INTERACTIVE RED TEAM CARD */}
             <InteractiveTiltCard glowColor="rgba(255, 51, 51, 0.15)" delayClass="delay-100">
               <div className="w-12 h-12 bg-[#ff3333]/10 border border-[#ff3333]/30 text-[#ff3333] rounded-lg flex items-center justify-center text-xl mb-8 transition-transform group-hover:scale-110">
@@ -521,7 +521,7 @@ export default function Page() {
 
           {/* Terminal/Console Window */}
           <div className="bg-[#050505] border border-white/10 rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
-            
+
             {/* Terminal Header with macOS Buttons */}
             <div className="bg-[#111111] border-b border-white/5 px-4 py-3 flex items-center justify-between">
               <div className="flex gap-2">
@@ -553,11 +553,10 @@ export default function Page() {
 
                     <div className="relative z-10 flex items-center gap-4 md:w-48 shrink-0 group-hover:translate-x-2 transition-transform duration-300 ease-out">
                       <span className="text-gray-600 font-mono text-xs">[{rule.id}]</span>
-                      <span className={`text-[10px] font-bold font-mono tracking-[0.15em] uppercase px-2.5 py-1 rounded border ${
-                        rule.tag === 'CRITICAL' ? 'bg-[#ff3333]/10 border-[#ff3333]/30 text-[#ff3333]' : 
-                        rule.tag === 'MANDATORY' ? 'bg-[#00ccff]/10 border-[#00ccff]/30 text-[#00ccff]' : 
-                        'bg-white/5 border-white/10 text-gray-400'
-                      }`}>
+                      <span className={`text-[10px] font-bold font-mono tracking-[0.15em] uppercase px-2.5 py-1 rounded border ${rule.tag === 'CRITICAL' ? 'bg-[#ff3333]/10 border-[#ff3333]/30 text-[#ff3333]' :
+                          rule.tag === 'MANDATORY' ? 'bg-[#00ccff]/10 border-[#00ccff]/30 text-[#00ccff]' :
+                            'bg-white/5 border-white/10 text-gray-400'
+                        }`}>
                         {rule.tag}
                       </span>
                     </div>
@@ -573,7 +572,7 @@ export default function Page() {
 
               {/* Live Animated Commands */}
               <p className="text-gray-400 font-mono text-sm mt-10 select-none">
-                <span className="text-[#00ccff] font-bold">root@breachtrix</span>:<span className="text-white">~</span>$ 
+                <span className="text-[#00ccff] font-bold">root@breachtrix</span>:<span className="text-white">~</span>$
                 <TerminalTypewriter />
                 <span className="inline-block w-2 h-4 bg-white/70 align-middle animate-pulse ml-1"></span>
               </p>
@@ -585,14 +584,14 @@ export default function Page() {
 
       {/* ── REDESIGNED CTA (SECURITY CHECKPOINT) ── */}
       <section className="relative py-48 px-6 flex justify-center items-center border-t border-white/5 overflow-hidden">
-        
+
         {/* Ambient Background Grid & Glow */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.03)_0%,transparent_70%)] pointer-events-none"></div>
         <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(#111 1px, transparent 1px), linear-gradient(90deg, #111 1px, transparent 1px)', backgroundSize: '30px 30px', opacity: 0.5 }}></div>
 
         {/* The Main Container - Uses 'group' to trigger nested hover states */}
         <div className="group relative z-10 max-w-4xl w-full flex flex-col items-center reveal-up opacity-0 translate-y-8 transition-all duration-1000 ease-out p-12 md:p-20">
-          
+
           {/* Cyber Targeting Brackets (Corners) */}
           <div className="absolute top-0 left-0 w-16 h-16 border-t-2 border-l-2 border-white/20 group-hover:border-[#00ccff] group-hover:scale-110 transition-all duration-500 rounded-tl-xl"></div>
           <div className="absolute top-0 right-0 w-16 h-16 border-t-2 border-r-2 border-white/20 group-hover:border-[#00ccff] group-hover:scale-110 transition-all duration-500 rounded-tr-xl"></div>
@@ -601,7 +600,7 @@ export default function Page() {
 
           {/* Scanner Laser Line (Activates on Hover) */}
           <div className="absolute left-0 right-0 h-[1px] bg-[#00ccff] shadow-[0_0_15px_#00ccff] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-50"
-               style={{ top: '50%', animation: 'scan 2s ease-in-out infinite alternate' }}>
+            style={{ top: '50%', animation: 'scan 2s ease-in-out infinite alternate' }}>
             <style>{`
               @keyframes scan {
                 0% { transform: translateY(-100px); }
@@ -626,12 +625,12 @@ export default function Page() {
           <p className="text-gray-500 font-mono text-sm mb-12 tracking-widest uppercase">
             [ Action Required: Authenticate to proceed ]
           </p>
-          
+
           {/* High-Tech Button */}
           <a href="https://docs.google.com/forms/d/e/1FAIpQLSeEX8W68tbjlwDC-JaL4CULsdJVzkRGnNUejIlj53DnC4l71Q/viewform" className="relative inline-flex items-center justify-center overflow-hidden border border-white/20 bg-[#050505] px-10 py-5 text-sm md:text-base font-mono uppercase tracking-[0.2em] text-white transition-all duration-500 hover:border-[#00ccff] hover:shadow-[0_0_40px_rgba(0,204,255,0.3)] group/btn">
             {/* Button background fill effect */}
             <span className="absolute inset-0 bg-[#00ccff]/10 translate-y-[100%] group-hover/btn:translate-y-0 transition-transform duration-300 ease-in-out z-0"></span>
-            
+
             <span className="relative z-10 flex items-center gap-4">
               Initiate Sequence
               <svg className="group-hover/btn:translate-x-2 transition-transform duration-300" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -643,10 +642,10 @@ export default function Page() {
 
           {/* Decorative Hex Data */}
           <div className="absolute bottom-6 right-6 text-gray-700 font-mono text-[10px] hidden md:block opacity-50 select-none">
-            0x00F8 0x11A2<br/>0xCC41 0x99B0
+            0x00F8 0x11A2<br />0xCC41 0x99B0
           </div>
           <div className="absolute top-6 left-6 text-gray-700 font-mono text-[10px] hidden md:block opacity-50 select-none">
-            SYS.REQ.AUTH<br/>NET: SECURE
+            SYS.REQ.AUTH<br />NET: SECURE
           </div>
 
         </div>
